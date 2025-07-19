@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-chaos-operator
+  labels:
+    app: {{ .Release.Name }}-chaos-operator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-chaos-operator
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-chaos-operator
+    spec:
+      serviceAccountName: {{ .Release.Name }}-chaos-operator
+      containers:
+        - name: chaos-operator
+          image: "{{ .Values.image.repository }}-chaos-operator:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ENVIRONMENT
+              value: "production"
+            {{- if .Values.postgresql.enabled }}
+            - name: DB_HOST
+              value: "{{ .Release.Name }}-postgresql"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "{{ .Values.postgresql.auth.database }}"
+            - name: DB_USER
+              value: "{{ .Values.postgresql.auth.username }}"
+            - name: DB_PASSWORD
+              value: "{{ .Values.postgresql.auth.password }}"
+            {{- else }}
+            - name: DB_HOST
+              value: "{{ .Values.database.host }}"
+            - name: DB_PORT
+              value: "{{ .Values.database.port }}"
+            - name: DB_NAME
+              value: "{{ .Values.database.name }}"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: password
+            {{- end }}
+            - name: MOCK_KUBERNETES
+              value: "false"
+            - name: NAMESPACE
+              value: "default"
+          resources:
+            {{- toYaml .Values.chaosOperator.resources | nindent 12 }}

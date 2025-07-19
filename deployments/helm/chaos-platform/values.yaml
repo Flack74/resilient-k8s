@@ -1,0 +1,89 @@
+# Default values for chaos-platform
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: chaos-engineering-as-a-platform
+  tag: latest
+  pullPolicy: IfNotPresent
+
+apiServer:
+  port: 8080
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+chaosOperator:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+database:
+  host: postgres
+  port: 5432
+  name: chaos_platform
+  user: postgres
+  existingSecret: chaos-platform-db-credentials
+
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: admin
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+# PostgreSQL dependency configuration
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: postgres_password
+    database: chaos_platform
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# Prometheus dependency configuration
+prometheus:
+  enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+      size: 8Gi
+
+# Grafana dependency configuration
+grafana:
+  enabled: true
+  adminPassword: admin
+  persistence:
+    enabled: true
+    size: 5Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://{{ .Release.Name }}-prometheus-server
+          access: proxy
+          isDefault: true

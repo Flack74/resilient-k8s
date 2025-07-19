@@ -1,0 +1,93 @@
+services:
+  postgres:
+    env_file: .env
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-postgres-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-postgres-dbs.sh
+
+  api-server:
+    env_file: .env
+    build:
+      context: .
+      dockerfile: deployments/docker/api-server.Dockerfile
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      PORT: ${PORT}
+      ENVIRONMENT: ${ENVIRONMENT}
+      DATABASE_URL: ${DATABASE_URL}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
+    volumes:
+      - ./web/dashboard:/app/web/dashboard
+    depends_on:
+      - postgres
+
+  chaos-operator:
+    env_file: .env
+    build:
+      context: .
+      dockerfile: deployments/docker/chaos-operator.Dockerfile
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT}
+      DATABASE_URL: ${DATABASE_URL}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
+      KUBECONFIG: "/app/config/kubeconfig.yaml"
+      KUBE_TOKEN: ${KUBE_TOKEN}
+      NAMESPACE: ${NAMESPACE}
+      MOCK_KUBERNETES: ${MOCK_KUBERNETES}
+    volumes:
+      - ./deployments/kubernetes/config:/app/config
+    depends_on:
+      - postgres
+      - api-server
+
+  prometheus:
+    image: prom/prometheus:v2.37.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    env_file: .env
+    image: grafana/grafana:9.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_DATABASE_TYPE: ${GF_DATABASE_TYPE}
+      GF_DATABASE_HOST: ${GF_DATABASE_HOST}
+      GF_DATABASE_PORT: ${GF_DATABASE_PORT}
+      GF_DATABASE_NAME: ${GF_DATABASE_NAME}
+      GF_DATABASE_USER: ${GF_DATABASE_USER}
+      GF_DATABASE_PASSWORD: ${GF_DATABASE_PASSWORD}
+    volumes:
+      - ./deployments/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+      - postgres
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./web/dashboard:/usr/share/nginx/html
+      - ./web/dashboard/js:/usr/share/nginx/html/js
+      - ./deployments/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api-server
+      - grafana
+      - prometheus
+
+volumes:
+  postgres-data:

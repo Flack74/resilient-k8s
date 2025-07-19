@@ -1,0 +1,87 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.19'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.19'
+
+      - name: Build binaries
+        run: |
+          mkdir -p bin
+          go build -o bin/api-server ./cmd/api-server
+          go build -o bin/chaos-operator ./cmd/chaos-operator
+          go build -o bin/chaos-cli ./cmd/cli
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: bin/
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API server image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: deployments/docker/api-server.Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/api-server:latest
+
+      - name: Build and push Chaos operator image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: deployments/docker/chaos-operator.Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/chaos-operator:latest

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Engineering Platform - Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-5">
+            <h1>Chaos Engineering Platform</h1>
+            <p class="lead">Welcome to your Chaos Engineering as a Service Platform</p>
+        </header>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">API Server</h5>
+                        <p class="card-text">Access the Chaos Engineering API Server</p>
+                        <a href="http://localhost:8080/health" class="btn btn-primary" target="_blank">Health Check</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Grafana</h5>
+                        <p class="card-text">View dashboards and metrics</p>
+                        <p><small>Username: admin<br>Password: admin</small></p>
+                        <a href="http://localhost:3000" class="btn btn-primary" target="_blank">Open Grafana</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Prometheus</h5>
+                        <p class="card-text">Query metrics and monitor experiments</p>
+                        <a href="http://localhost:9090" class="btn btn-primary" target="_blank">Open Prometheus</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">API Documentation</h5>
+                        <p class="card-text">Learn how to use the Chaos Engineering API</p>
+                        <a href="http://localhost:8080/api/v1/experiments" class="btn btn-primary" target="_blank">List Experiments</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Dashboard</h5>
+                        <p class="card-text">Access the Chaos Engineering Dashboard</p>
+                        <a href="index.html" class="btn btn-primary">Open Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
